@@ -48,6 +48,9 @@
   <div class="touch-ui" id="touchUI" aria-hidden="true">
     <div class="joy" id="joy"><div class="knob" id="knob"></div></div>
     <button class="btn" id="dashBtn">DASH</button>
+    <button class="btn" id="startBtn" style="left:18px; bottom:200px; right:auto;">START</button>
+    <button class="btn" id="restartBtn" style="left:18px; bottom:120px; right:auto;">RESTART</button>
+    <button class="btn" id="newMazeBtn" style="left:18px; bottom:40px; right:auto;">NEW MAZE</button>
   </div>
 
 <script>
@@ -149,6 +152,12 @@
   window.addEventListener("keyup", (e) => keys.delete(e.key.toLowerCase()));
   const isDown = (k) => keys.has(k);
 
+  // Mobile: tap canvas to start/restart
+  canvas.addEventListener("pointerdown", () => {
+    if (state === State.START) startGame();
+    else if (state === State.LOSE || state === State.WIN) restart();
+  }, { passive: true });
+
   // ---- Touch controls (iPhone) ----
   let touchMove = {x:0, y:0};   // -1..1
   let touchDash = false;
@@ -198,6 +207,19 @@
   dashBtn.addEventListener("pointerdown", (e)=>{ touchDash = true; e.preventDefault(); }, {passive:false});
   dashBtn.addEventListener("pointerup",   (e)=>{ touchDash = false; e.preventDefault(); }, {passive:false});
   dashBtn.addEventListener("pointercancel",(e)=>{ touchDash = false; e.preventDefault(); }, {passive:false});
+
+  // On-screen buttons
+  document.getElementById("startBtn").addEventListener("pointerdown", (e) => {
+    startGame(); e.preventDefault();
+  }, {passive:false});
+
+  document.getElementById("restartBtn").addEventListener("pointerdown", (e) => {
+    restart(); e.preventDefault();
+  }, {passive:false});
+
+  document.getElementById("newMazeBtn").addEventListener("pointerdown", (e) => {
+    newMaze(); e.preventDefault();
+  }, {passive:false});
 
   // ====== Helpers ======
   const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
