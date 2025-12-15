@@ -10,7 +10,10 @@
     canvas { background: linear-gradient(#14214a, #0b1020); border-radius:16px; box-shadow: 0 20px 60px rgba(0,0,0,.4); max-width: 100%; height: auto; touch-action: none; }
     
     .touch-ui{
-      position:fixed; inset:0; pointer-events:none; z-index:20;
+      position:fixed; inset:0; z-index:20;
+      pointer-events:auto;
+      background:transparent;
+      touch-action:none;
     }
     .joy{
       position:absolute; left:18px; bottom:18px;
@@ -220,6 +223,16 @@
   document.getElementById("newMazeBtn").addEventListener("pointerdown", (e) => {
     newMaze(); e.preventDefault();
   }, {passive:false});
+
+  // Touch UI background tap
+  const touchUI = document.getElementById("touchUI");
+  
+  // If you tap empty space on the touch UI, start/restart (great on iPhone)
+  touchUI.addEventListener("pointerdown", (e) => {
+    if (e.target !== touchUI) return; // only background, not buttons/joystick
+    if (state === State.START) startGame();
+    else if (state === State.LOSE || state === State.WIN) restart();
+  }, { passive: true });
 
   // ====== Helpers ======
   const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
