@@ -5,14 +5,49 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Catch the Bride — Unlock the Invite</title>
   <style>
-    html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background:#0b1020; }
+    html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background:#0b1020; overscroll-behavior: none; touch-action: none; }
     .wrap { height: 100%; display:flex; align-items:center; justify-content:center; padding:16px; }
-    canvas { background: linear-gradient(#14214a, #0b1020); border-radius:16px; box-shadow: 0 20px 60px rgba(0,0,0,.4); max-width: 100%; height: auto; }
+    canvas { background: linear-gradient(#14214a, #0b1020); border-radius:16px; box-shadow: 0 20px 60px rgba(0,0,0,.4); max-width: 100%; height: auto; touch-action: none; }
+    
+    .touch-ui{
+      position:fixed; inset:0; pointer-events:none; z-index:20;
+    }
+    .joy{
+      position:absolute; left:18px; bottom:18px;
+      width:160px; height:160px; border-radius:999px;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.14);
+      pointer-events:auto; touch-action:none;
+    }
+    .joy .knob{
+      position:absolute; left:50%; top:50%;
+      width:70px; height:70px; border-radius:999px;
+      transform:translate(-50%,-50%);
+      background:rgba(255,255,255,.16);
+      border:1px solid rgba(255,255,255,.18);
+    }
+    .btn{
+      position:absolute; right:18px; bottom:32px;
+      width:140px; height:72px; border-radius:18px;
+      background:rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.16);
+      color:rgba(255,255,255,.92);
+      font:700 18px system-ui;
+      pointer-events:auto;
+    }
+    @media (pointer:fine){
+      .touch-ui{ display:none; }
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <canvas id="game" width="960" height="540"></canvas>
+  </div>
+
+  <div class="touch-ui" id="touchUI" aria-hidden="true">
+    <div class="joy" id="joy"><div class="knob" id="knob"></div></div>
+    <button class="btn" id="dashBtn">DASH</button>
   </div>
 
 <script>
@@ -113,6 +148,56 @@
   }, { passive:false });
   window.addEventListener("keyup", (e) => keys.delete(e.key.toLowerCase()));
   const isDown = (k) => keys.has(k);
+
+  // ---- Touch controls (iPhone) ----
+  let touchMove = {x:0, y:0};   // -1..1
+  let touchDash = false;
+
+  const joy = document.getElementById("joy");
+  const knob = document.getElementById("knob");
+  const dashBtn = document.getElementById("dashBtn");
+
+  function setKnob(nx, ny){
+    const max = 55; // knob travel px
+    knob.style.transform = `translate(${nx*max}px, ${ny*max}px) translate(-50%,-50%)`;
+  }
+
+  let joyActiveId = null;
+  let joyCenter = null;
+
+  joy.addEventListener("pointerdown", (e) => {
+    joyActiveId = e.pointerId;
+    joy.setPointerCapture(e.pointerId);
+    const r = joy.getBoundingClientRect();
+    joyCenter = { x: r.left + r.width/2, y: r.top + r.height/2 };
+    e.preventDefault();
+  }, {passive:false});
+
+  joy.addEventListener("pointermove", (e) => {
+    if (e.pointerId !== joyActiveId || !joyCenter) return;
+    const dx = e.clientX - joyCenter.x;
+    const dy = e.clientY - joyCenter.y;
+    const max = 60;
+    const nx = clamp(dx/max, -1, 1);
+    const ny = clamp(dy/max, -1, 1);
+    touchMove.x = nx;
+    touchMove.y = ny;
+    setKnob(nx, ny);
+    e.preventDefault();
+  }, {passive:false});
+
+  function joyUp(){
+    joyActiveId = null;
+    joyCenter = null;
+    touchMove.x = 0; touchMove.y = 0;
+    setKnob(0,0);
+  }
+  joy.addEventListener("pointerup", joyUp);
+  joy.addEventListener("pointercancel", joyUp);
+
+  dashBtn.addEventListener("pointerdown", (e)=>{ touchDash = true; e.preventDefault(); }, {passive:false});
+  dashBtn.addEventListener("pointerup",   (e)=>{ touchDash = false; e.preventDefault(); }, {passive:false});
+  dashBtn.addEventListener("pointercancel",(e)=>{ touchDash = false; e.preventDefault(); }, {passive:false});
 
   // ====== Helpers ======
   const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
@@ -452,10 +537,18 @@
 
     // --- Groom movement ---
     let ix = 0, iy = 0;
+
+    // keyboard
     if (isDown("arrowleft") || isDown("a")) ix -= 1;
     if (isDown("arrowright")|| isDown("d")) ix += 1;
     if (isDown("arrowup")   || isDown("w")) iy -= 1;
     if (isDown("arrowdown") || isDown("s")) iy += 1;
+
+    // touch joystick overrides if active
+    if (Math.abs(touchMove.x) > 0.05 || Math.abs(touchMove.y) > 0.05) {
+      ix = touchMove.x;
+      iy = touchMove.y;
+    }
 
     const d = norm(ix, iy);
     let speed = GROOM_SPEED;
@@ -464,7 +557,7 @@
     if (groom.dashLeft > 0) {
       groom.dashLeft = Math.max(0, groom.dashLeft - dt);
       speed = DASH_SPEED;
-    } else if (isDown(" ") && groom.dashCd <= 0 && (ix !== 0 || iy !== 0)) {
+    } else if ((isDown(" ") || touchDash) && groom.dashCd <= 0 && (ix !== 0 || iy !== 0)) {
       groom.dashLeft = DASH_DURATION;
       groom.dashCd = DASH_COOLDOWN;
       speed = DASH_SPEED;
