@@ -38,6 +38,21 @@
       font:700 18px system-ui;
       pointer-events:auto;
     }
+    .btn.small{
+      width:120px;
+      height:48px;
+      border-radius:14px;
+      font-size:14px;
+    }
+    .left-stack{
+      position:absolute;
+      left:18px;
+      bottom:200px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      pointer-events:auto;
+    }
     @media (pointer:fine){
       .touch-ui{ display:none; }
     }
@@ -51,9 +66,11 @@
   <div class="touch-ui" id="touchUI" aria-hidden="true">
     <div class="joy" id="joy"><div class="knob" id="knob"></div></div>
     <button class="btn" id="dashBtn">DASH</button>
-    <button class="btn" id="startBtn" style="left:18px; top:60px; right:auto; bottom:auto;">START</button>
-    <button class="btn" id="restartBtn" style="left:18px; top:140px; right:auto; bottom:auto;">RESTART</button>
-    <button class="btn" id="newMazeBtn" style="left:18px; top:220px; right:auto; bottom:auto;">NEW MAZE</button>
+    <div class="left-stack">
+      <button class="btn small" id="startBtn">START</button>
+      <button class="btn small" id="restartBtn">RESTART</button>
+      <button class="btn small" id="newMazeBtn">NEW MAZE</button>
+    </div>
   </div>
 
 <script>
