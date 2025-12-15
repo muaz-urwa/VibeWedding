@@ -104,7 +104,8 @@
   const BRIDE_FRICTION = 0.08;
 
   // Villain (chases groom)
-  const VILLAIN_SPEED = 245;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.userAgent));
+  const VILLAIN_SPEED = isIOS ? 160 : 245;
   const VILLAIN_ACCEL = 12.0;
   const VILLAIN_FRICTION = 0.10;
   const VILLAIN_RECALC_EVERY = 0.18;
